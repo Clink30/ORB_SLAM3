@@ -73,10 +73,12 @@ public:
 
 int main(int argc, char **argv)
 {
+  // 1. ROS 初始化
   ros::init(argc, argv, "Stereo_Inertial");
   ros::NodeHandle n("~");
   ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Info);
   bool bEqual = false;
+  // 2. 参数判断
   if(argc < 4 || argc > 5)
   {
     cerr << endl << "Usage: rosrun ORB_SLAM3 Stereo_Inertial path_to_vocabulary path_to_settings do_rectify [do_equalize]" << endl;
@@ -93,11 +95,13 @@ int main(int argc, char **argv)
   }
 
   // Create SLAM system. It initializes all system threads and gets ready to process frames.
+  // 3. SLAM系统初始化
   ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::IMU_STEREO,true);
 
-  ImuGrabber imugb;
-  ImageGrabber igb(&SLAM,&imugb,sbRect == "true",bEqual);
+  ImuGrabber imugb; // IMU数据结构
+  ImageGrabber igb(&SLAM,&imugb,sbRect == "true",bEqual); // 图像数据结构
   
+  // 4. 获取图像去畸变参数
     if(igb.do_rectify)
     {      
         // Load settings related to stereo calibration
@@ -138,10 +142,12 @@ int main(int argc, char **argv)
     }
 
   // Maximum delay, 5 seconds
+  // ros订阅IMU和左右图信息
   ros::Subscriber sub_imu = n.subscribe("/imu", 1000, &ImuGrabber::GrabImu, &imugb); 
   ros::Subscriber sub_img_left = n.subscribe("/camera/left/image_raw", 100, &ImageGrabber::GrabImageLeft,&igb);
   ros::Subscriber sub_img_right = n.subscribe("/camera/right/image_raw", 100, &ImageGrabber::GrabImageRight,&igb);
-
+  
+  // 数据时间戳匹配，单独开一个线程
   std::thread sync_thread(&ImageGrabber::SyncWithImu,&igb);
 
   ros::spin();
@@ -266,7 +272,7 @@ void ImageGrabber::SyncWithImu()
         cv::remap(imLeft,imLeft,M1l,M2l,cv::INTER_LINEAR);
         cv::remap(imRight,imRight,M1r,M2r,cv::INTER_LINEAR);
       }
-
+      // 对齐完数据后进行双目追踪
       mpSLAM->TrackStereo(imLeft,imRight,tImLeft,vImuMeas);
 
       std::chrono::milliseconds tSleep(1);

@@ -248,6 +248,13 @@ public:
 
     // MapPoint observation functions
     int GetNumberMPs();
+
+    /**  KeyFrame.cc
+    * @brief 将当前地图点pMP添加到所调用帧(pKF)对应地图点集合mvpMapPoints的idx处
+    * @调用方式: pKF->AddMapPoint(pMP,i);    
+    * @param pKF     待添加的地图点
+    * @param idx     添加到的索引位置
+    */  
     void AddMapPoint(MapPoint* pMP, const size_t &idx);
     void EraseMapPointMatch(const int &idx);
     void EraseMapPointMatch(MapPoint* pMP);

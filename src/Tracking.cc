@@ -2334,9 +2334,9 @@ void Tracking::Track()
 
 void Tracking::StereoInitialization()
 {
-    if(mCurrentFrame.N>500)
+    if(mCurrentFrame.N>500) // 当前图像特征点的数量超过 500 个
     {
-        if (mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
+        if (mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD) // 双目和单目由于具有深度，都通过该方式进行初始化
         {
             if (!mCurrentFrame.mpImuPreintegrated || !mLastFrame.mpImuPreintegrated)
             {
@@ -2367,12 +2367,14 @@ void Tracking::StereoInitialization()
             mCurrentFrame.SetImuPoseVelocity(Rwb0, twb0, Vwb0);
         }
         else
-            mCurrentFrame.SetPose(Sophus::SE3f());
+            mCurrentFrame.SetPose(Sophus::SE3f()); // 设置原点位姿，零值
 
         // Create KeyFrame
+        // 初始帧作为关键帧
         KeyFrame* pKFini = new KeyFrame(mCurrentFrame,mpAtlas->GetCurrentMap(),mpKeyFrameDB);
 
         // Insert KeyFrame in the map
+        // 将当前关键帧插入地图中
         mpAtlas->AddKeyFrame(pKFini);
 
         // Create MapPoints and asscoiate to KeyFrame
@@ -2380,15 +2382,15 @@ void Tracking::StereoInitialization()
             for(int i=0; i<mCurrentFrame.N;i++)
             {
                 float z = mCurrentFrame.mvDepth[i];
-                if(z>0)
+                if(z>0) //只处理有深度值的点
                 {
                     Eigen::Vector3f x3D;
-                    mCurrentFrame.UnprojectStereo(i, x3D);
-                    MapPoint* pNewMP = new MapPoint(x3D, pKFini, mpAtlas->GetCurrentMap());
-                    pNewMP->AddObservation(pKFini,i);
-                    pKFini->AddMapPoint(pNewMP,i);
-                    pNewMP->ComputeDistinctiveDescriptors();
-                    pNewMP->UpdateNormalAndDepth();
+                    mCurrentFrame.UnprojectStereo(i, x3D); //获取3D点
+                    MapPoint* pNewMP = new MapPoint(x3D, pKFini, mpAtlas->GetCurrentMap()); //构建地图点
+                    pNewMP->AddObservation(pKFini,i); // 构建观测到该特征点的帧 
+                    pKFini->AddMapPoint(pNewMP,i); // 将当前地图点添加到所调用帧对应的地图点集合的idx处
+                    pNewMP->ComputeDistinctiveDescriptors(); // 最佳描述子
+                    pNewMP->UpdateNormalAndDepth(); // 更新平均观测向量
                     mpAtlas->AddMapPoint(pNewMP);
 
                     mCurrentFrame.mvpMapPoints[i]=pNewMP;
@@ -2422,9 +2424,9 @@ void Tracking::StereoInitialization()
 
         //cout << "Active map: " << mpAtlas->GetCurrentMap()->GetId() << endl;
 
-        mpLocalMapper->InsertKeyFrame(pKFini);
+        mpLocalMapper->InsertKeyFrame(pKFini); // 插入关键帧
 
-        mLastFrame = Frame(mCurrentFrame);
+        mLastFrame = Frame(mCurrentFrame); // 将当前帧置为上一帧
         mnLastKeyFrameId = mCurrentFrame.mnId;
         mpLastKeyFrame = pKFini;
         //mnLastRelocFrameId = mCurrentFrame.mnId;

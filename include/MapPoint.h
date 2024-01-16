@@ -140,7 +140,10 @@ public:
     inline int GetFound(){
         return mnFound;
     }
-
+    
+    /**
+     * @brief 计算地图点最具代表性的描述子
+    */
     void ComputeDistinctiveDescriptors();
 
     cv::Mat GetDescriptor();
